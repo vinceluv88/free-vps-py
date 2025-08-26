@@ -157,7 +157,7 @@ if [ "$MODE_CHOICE" = "1" ]; then
     echo -e "${GREEN}UUID 已设置为: $UUID_INPUT${NC}"
     
     sed -i "s/CFIP = os.environ.get('CFIP', '[^']*')/CFIP = os.environ.get('CFIP', 'joeyblog.net')/" app.py
-    echo -e "${GREEN}优选IP已自动设置为: joeyblog.net${NC}"
+    echo -e "${GREEN}优选IP已自动设置为: icook.tw${NC}"
     echo -e "${GREEN}YouTube分流已自动配置${NC}"
     
     echo
