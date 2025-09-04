@@ -1,5 +1,11 @@
 #!/bin/bash
 
+
+TARGET_DIR="/home/anydir"
+
+rm -rf "$TARGET_DIR/python-xray-argo"
+rm -f "$TARGET_DIR/.xray_nodes_info"
+
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
