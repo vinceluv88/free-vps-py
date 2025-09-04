@@ -91,6 +91,31 @@ if [ "$MODE_CHOICE" = "1" ]; then
     
     sed -i "s/UUID = os.environ.get('UUID', '[^']*')/UUID = os.environ.get('UUID', '$UUID_INPUT')/" app.py
     sed -i "s/CFIP = os.environ.get('CFIP', '[^']*')/CFIP = os.environ.get('CFIP', 'joeyblog.net')/" app.py
+
+echo -e "${BLUE}正在获取临时 Cloudflare 隧道...${NC}"
+
+# 确保 cloudflared 已安装
+if ! command -v cloudflared &> /dev/null; then
+    echo -e "${YELLOW}未安装 cloudflared，自动下载...${NC}"
+    curl -L https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 -o cloudflared
+    chmod +x cloudflared
+    sudo mv cloudflared /usr/local/bin/
+fi
+
+# 启动临时隧道并获取域名
+TEMP_TUNNEL_INFO=$(cloudflared tunnel --url http://localhost:8080 --no-autoupdate 2>&1 | grep -oP 'https://\S+trycloudflare.com')
+
+if [ -n "$TEMP_TUNNEL_INFO" ]; then
+    TEMP_DOMAIN=$(echo "$TEMP_TUNNEL_INFO" | sed -E 's|https://([^/]+).*|\1|')
+    TEMP_PORT=443
+    echo -e "${GREEN}获取到临时隧道: $TEMP_DOMAIN:$TEMP_PORT${NC}"
+
+    sed -i "s/CFIP = os.environ.get('CFIP', '[^']*')/CFIP = os.environ.get('CFIP', '$TEMP_DOMAIN')/" app.py
+    sed -i "s/CFPORT = int(os.environ.get('CFPORT', '[^']*'))/CFPORT = int(os.environ.get('CFPORT', '$TEMP_PORT'))/" app.py
+else
+    echo -e "${RED}获取临时隧道失败，继续使用原有配置${NC}"
+fi
+    
     echo -e "${GREEN}极速配置完成，UUID和CFIP已更新${NC}"
 
 # ------------------- 完整模式 -------------------
