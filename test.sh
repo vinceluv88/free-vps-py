@@ -1,47 +1,46 @@
 #!/bin/bash
-# ========================================
-# Cloudflare Argo 隧道自动刷新脚本
-# ========================================
 
-# 颜色输出
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-NC='\033[0m'
+# =========================
+# 强制生成新的 Cloudflare Argo 隧道脚本
+# =========================
 
-# 日志文件
-LOG_FILE="./app.log"
+# 依赖文件和目录
+ARGO_FILE="$HOME/argo.json"
+CACHE_DIR="$HOME/.argo_cache"
+LOG_FILE="$HOME/argo.log"
 
-# Argo 隧道相关缓存文件
-CACHE_DIR="./.cache"
-ARGO_FILE="./argo.json"
+# 停掉旧的隧道进程
+pkill -f "app.py"
 
-# 清理旧进程和缓存
-echo -e "${YELLOW}停止旧的 Argo 隧道进程...${NC}"
-pkill -f "python3 app.py" 2>/dev/null || true
-sleep 2
+# 创建缓存目录
+mkdir -p "$CACHE_DIR"
 
-echo -e "${YELLOW}删除缓存文件和旧隧道信息...${NC}"
-rm -rf "$CACHE_DIR"
+# 生成新的 UUID
+NEW_UUID=$(uuidgen | tr '[:upper:]' '[:lower:]')
+echo "生成新的 UUID: $NEW_UUID"
+
+# 将 UUID 写入 app.py 配置（假设 app.py 可以读取此环境变量）
+export TUNNEL_UUID="$NEW_UUID"
+
+# 删除旧隧道信息文件
 rm -f "$ARGO_FILE"
 
-# 可选：清理环境变量的固定隧道（防止复用）
-export ARGO_DOMAIN=""
-export ARGO_AUTH=""
-
-# 生成新的 UUID（如果 app.py 需要）
-if command -v uuidgen &>/dev/null; then
-    NEW_UUID=$(uuidgen | tr '[:upper:]' '[:lower:]')
-else
-    NEW_UUID=$(python3 -c "import uuid; print(str(uuid.uuid4()))")
-fi
-export UUID="$NEW_UUID"
-echo -e "${GREEN}生成新的 UUID: $UUID${NC}"
-
-# 启动新的 Argo 隧道
-echo -e "${YELLOW}启动新的 Argo 隧道...${NC}"
+# 启动隧道
+echo "启动 Cloudflare Argo 隧道..."
 nohup python3 app.py > "$LOG_FILE" 2>&1 &
 
-sleep 2
-echo -e "${GREEN}Argo 隧道启动完成，日志输出到 $LOG_FILE${NC}"
-echo -e "${YELLOW}可通过 tail -f $LOG_FILE 查看运行情况${NC}"
+# 等待隧道启动完成
+echo "等待隧道启动中..."
+sleep 5
+
+# 检查隧道信息是否生成
+if [ -f "$ARGO_FILE" ]; then
+    echo "新的隧道已生成，节点信息如下："
+    cat "$ARGO_FILE"
+else
+    echo "隧道信息尚未生成，请查看日志：$LOG_FILE"
+fi
+
+# 输出日志最后 20 行
+echo "日志输出（最后 20 行）："
+tail -n 20 "$LOG_FILE"
