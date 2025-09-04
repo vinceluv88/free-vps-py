@@ -1,8 +1,4 @@
 #!/bin/bash
-rm -f .cache/sub.txt sub.txt
-
-
-
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
