@@ -561,8 +561,7 @@ sleep 2
 python3 app.py > app.log 2>&1 &
 APP_PID=$!
 
-# 清理旧的订阅文件，防止旧数据干扰
-rm -f .cache/sub.txt sub.txt
+
 
 # 验证PID获取成功
 if [ -z "$APP_PID" ] || [ "$APP_PID" -eq 0 ]; then
