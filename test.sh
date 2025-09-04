@@ -552,10 +552,8 @@ echo -e "${GREEN}YouTube分流和80端口节点已集成${NC}"
 
 PROJECT_DIR="python-xray-argo"
 
-# =========================
-# 1️⃣ 自动识别目录并重新部署
-# =========================
-PROJECT_DIR="$(cd "$(dirname "$0")" && pwd)/python-xray-argo"
+# 使用当前工作目录
+PROJECT_DIR="$PWD/python-xray-argo"
 
 # 删除旧目录
 rm -rf "$PROJECT_DIR"
