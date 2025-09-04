@@ -563,6 +563,14 @@ pkill -f "python3 app.py" > /dev/null 2>&1
 sleep 2
 
 
+# =========================
+# 2️⃣ 删除锁文件 / 缓存
+# =========================
+rm -f /tmp/argo_*.lock
+rm -f ~/.argo/*.json
+rm -rf "$PROJECT_DIR/.cache" "$PROJECT_DIR/sub.txt"
+
+
 
 # 更新或下载最新仓库
 if [ ! -d "$PROJECT_DIR" ]; then
