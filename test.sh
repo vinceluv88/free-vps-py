@@ -1,10 +1,33 @@
 #!/bin/bash
 
 
-TARGET_DIR="/home/anydir"
 
-rm -rf "$TARGET_DIR/python-xray-argo"
-rm -f "$TARGET_DIR/.xray_nodes_info"
+# base 目录，比如 /home
+BASE_DIR="/home"
+
+# 你想删除的目标目录名
+TARGET_DIR_NAME="python-xray-argo"
+TARGET_FILE_NAME=".xray_nodes_info"
+
+# 遍历 BASE_DIR 下的所有子目录
+for dir in "$BASE_DIR"/*; do
+    # 确保是目录
+    if [ -d "$dir" ]; then
+        # 删除目录
+        if [ -d "$dir/$TARGET_DIR_NAME" ]; then
+            echo "删除目录: $dir/$TARGET_DIR_NAME"
+            rm -rf "$dir/$TARGET_DIR_NAME"
+        fi
+        # 删除文件
+        if [ -f "$dir/$TARGET_FILE_NAME" ]; then
+            echo "删除文件: $dir/$TARGET_FILE_NAME"
+            rm -f "$dir/$TARGET_FILE_NAME"
+        fi
+    fi
+done
+
+echo "完成。"
+
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
