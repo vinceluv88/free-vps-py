@@ -552,13 +552,19 @@ echo -e "${GREEN}YouTube分流和80端口节点已集成${NC}"
 
 PROJECT_DIR="python-xray-argo"
 
+# =========================
+# 1️⃣ 自动识别目录并重新部署
+# =========================
+PROJECT_DIR="$(cd "$(dirname "$0")" && pwd)/python-xray-argo"
+
+# 删除旧目录
+rm -rf "$PROJECT_DIR"
+
 # 先停止旧服务
 pkill -f "python3 app.py" > /dev/null 2>&1
 sleep 2
 
-# 如果脚本有临时文件或 PID 文件，删除它们再重新运行
-rm -f /tmp/argo_*.lock
-rm -f ~/.argo/*.json
+
 
 # 更新或下载最新仓库
 if [ ! -d "$PROJECT_DIR" ]; then
