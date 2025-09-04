@@ -1,5 +1,41 @@
 #!/bin/bash
 
+
+# ==============================
+# 预清理旧目录和文件
+# ==============================
+BASE_DIR="/home"
+TARGET_DIR_NAME="python-xray-argo"
+TARGET_FILE_NAME=".xray_nodes_info"
+
+if [ ! -d "$BASE_DIR" ]; then
+    echo "错误：目录 $BASE_DIR 不存在！"
+    exit 1
+fi
+
+for dir in "$BASE_DIR"/*; do
+    if [ -d "$dir" ]; then
+        # 删除目录
+        if [ -d "$dir/$TARGET_DIR_NAME" ]; then
+            echo "删除目录: $dir/$TARGET_DIR_NAME"
+            rm -rf "$dir/$TARGET_DIR_NAME"
+        else
+            echo "目录不存在: $dir/$TARGET_DIR_NAME"
+        fi
+
+        # 删除文件
+        if [ -f "$dir/$TARGET_FILE_NAME" ]; then
+            echo "删除文件: $dir/$TARGET_FILE_NAME"
+            rm -f "$dir/$TARGET_FILE_NAME"
+        else
+            echo "文件不存在: $dir/$TARGET_FILE_NAME"
+        fi
+    fi
+done
+
+echo "预清理完成。"
+
+
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
