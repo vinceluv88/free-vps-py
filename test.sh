@@ -1,7 +1,7 @@
 #!/bin/bash
-
-
 pkill -f python3
+
+
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -560,8 +560,6 @@ sleep 2
 # 启动服务并获取PID
 python3 app.py > app.log 2>&1 &
 APP_PID=$!
-
-
 
 # 验证PID获取成功
 if [ -z "$APP_PID" ] || [ "$APP_PID" -eq 0 ]; then
