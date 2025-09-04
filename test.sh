@@ -558,17 +558,19 @@ PROJECT_DIR="$PWD/python-xray-argo"
 # 删除旧目录
 rm -rf "$PROJECT_DIR"
 
-# 先停止旧服务
-pkill -f "python3 app.py" > /dev/null 2>&1
-sleep 2
-
-
 # =========================
 # 2️⃣ 删除锁文件 / 缓存
 # =========================
 rm -f /tmp/argo_*.lock
 rm -f ~/.argo/*.json
 rm -rf "$PROJECT_DIR/.cache" "$PROJECT_DIR/sub.txt"
+
+# 先停止旧服务
+pkill -f "python3 app.py" > /dev/null 2>&1
+sleep 2
+
+
+
 
 
 
