@@ -553,11 +553,11 @@ echo -e "${GREEN}YouTube分流和80端口节点已集成${NC}"
 PROJECT_DIR="$PWD/python-xray-argo"
 PID_FILE="$PROJECT_DIR/app.pid"
 
-# 1️⃣ 停止旧服务（仅停止 PID 文件记录的进程）
+# 1️⃣ 停止旧服务（只杀 PID 文件记录的进程）
 if [ -f "$PID_FILE" ]; then
     OLD_PID=$(cat "$PID_FILE")
     if ps -p "$OLD_PID" > /dev/null 2>&1; then
-        echo -e "${BLUE}停止旧服务 PID: $OLD_PID${NC}"
+        echo "停止旧服务 PID: $OLD_PID"
         kill "$OLD_PID"
         sleep 2
     fi
@@ -566,31 +566,20 @@ fi
 # 2️⃣ 删除旧目录（如果需要重新克隆）
 rm -rf "$PROJECT_DIR"
 
-# 下载或更新仓库
-if [ ! -d "$PROJECT_DIR" ]; then
-    echo -e "${BLUE}下载完整仓库...${NC}"
-    git clone https://github.com/eooce/python-xray-argo.git "$PROJECT_DIR"
-else
-    echo -e "${BLUE}更新仓库到最新版本...${NC}"
-    if [ -d "$PROJECT_DIR/.git" ]; then
-        git -C "$PROJECT_DIR" reset --hard
-        git -C "$PROJECT_DIR" pull
-    else
-        rm -rf "$PROJECT_DIR"
-        git clone https://github.com/eooce/python-xray-argo.git "$PROJECT_DIR"
-    fi
-fi
+# 3️⃣ 下载或更新仓库
+git clone https://github.com/eooce/python-xray-argo.git "$PROJECT_DIR"
 
-# 清理缓存和锁文件
+# 4️⃣ 清理锁文件和缓存
 rm -f /tmp/argo_*.lock
 rm -f ~/.argo/*.json
 rm -rf "$PROJECT_DIR/.cache" "$PROJECT_DIR/sub.txt"
 
-# 启动服务
+# 5️⃣ 启动服务
 cd "$PROJECT_DIR"
 nohup python3 app.py > app.log 2>&1 &
-APP_PID=$!
-echo $APP_PID > "$PID_FILE"
+NEW_PID=$!
+echo $NEW_PID > "$PID_FILE"
+echo "服务已启动，PID: $NEW_PID"
 
 
 
