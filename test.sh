@@ -553,9 +553,13 @@ echo -e "${GREEN}YouTube分流和80端口节点已集成${NC}"
 # 使用当前工作目录
 PROJECT_DIR="$PWD/python-xray-argo"
 
-# 1️⃣ 停止旧服务
-pkill -f "python3 app.py" > /dev/null 2>&1
-sleep 2
+# 1️⃣ 停止旧服务（只停止旧 PID，避免杀掉新进程）
+OLD_PID=$(pgrep -f "python3 app.py" | head -1)
+if [ -n "$OLD_PID" ]; then
+    echo -e "${BLUE}停止旧服务 PID: $OLD_PID${NC}"
+    kill "$OLD_PID"
+    sleep 2
+fi
 
 # 2️⃣ 删除旧目录（如果需要重新克隆）
 rm -rf "$PROJECT_DIR"
@@ -583,7 +587,7 @@ rm -rf "$PROJECT_DIR/.cache" "$PROJECT_DIR/sub.txt"
 
 # 进入目录并启动服务
 cd "$PROJECT_DIR"
-python3 app.py > app.log 2>&1 &
+nohup python3 app.py > app.log 2>&1 &
 APP_PID=$!
 
 # 验证PID获取成功
@@ -598,6 +602,7 @@ if [ -z "$APP_PID" ] || [ "$APP_PID" -eq 0 ]; then
         exit 1
     fi
 fi
+
 
 
 echo -e "${GREEN}服务已在后台启动，PID: $APP_PID${NC}"
