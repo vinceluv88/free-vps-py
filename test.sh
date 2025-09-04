@@ -550,21 +550,23 @@ rm youtube_patch.py
 
 echo -e "${GREEN}YouTube分流和80端口节点已集成${NC}"
 
-# 使用当前工作目录
 PROJECT_DIR="$PWD/python-xray-argo"
+PID_FILE="$PROJECT_DIR/app.pid"
 
-# 1️⃣ 停止旧服务（只停止旧 PID，避免杀掉新进程）
-OLD_PID=$(pgrep -f "python3 app.py" | head -1)
-if [ -n "$OLD_PID" ]; then
-    echo -e "${BLUE}停止旧服务 PID: $OLD_PID${NC}"
-    kill "$OLD_PID"
-    sleep 2
+# 1️⃣ 停止旧服务（仅停止 PID 文件记录的进程）
+if [ -f "$PID_FILE" ]; then
+    OLD_PID=$(cat "$PID_FILE")
+    if ps -p "$OLD_PID" > /dev/null 2>&1; then
+        echo -e "${BLUE}停止旧服务 PID: $OLD_PID${NC}"
+        kill "$OLD_PID"
+        sleep 2
+    fi
 fi
 
 # 2️⃣ 删除旧目录（如果需要重新克隆）
 rm -rf "$PROJECT_DIR"
 
-# 更新或下载最新仓库
+# 下载或更新仓库
 if [ ! -d "$PROJECT_DIR" ]; then
     echo -e "${BLUE}下载完整仓库...${NC}"
     git clone https://github.com/eooce/python-xray-argo.git "$PROJECT_DIR"
@@ -574,34 +576,22 @@ else
         git -C "$PROJECT_DIR" reset --hard
         git -C "$PROJECT_DIR" pull
     else
-        echo -e "${YELLOW}目录存在但不是 Git 仓库，重新下载...${NC}"
         rm -rf "$PROJECT_DIR"
         git clone https://github.com/eooce/python-xray-argo.git "$PROJECT_DIR"
     fi
 fi
 
-# 4️⃣ 清理缓存和锁文件（启动前）
+# 清理缓存和锁文件
 rm -f /tmp/argo_*.lock
 rm -f ~/.argo/*.json
 rm -rf "$PROJECT_DIR/.cache" "$PROJECT_DIR/sub.txt"
 
-# 进入目录并启动服务
+# 启动服务
 cd "$PROJECT_DIR"
 nohup python3 app.py > app.log 2>&1 &
 APP_PID=$!
+echo $APP_PID > "$PID_FILE"
 
-# 验证PID获取成功
-if [ -z "$APP_PID" ] || [ "$APP_PID" -eq 0 ]; then
-    echo -e "${RED}获取进程PID失败，尝试直接启动${NC}"
-    nohup python3 app.py > app.log 2>&1 &
-    sleep 2
-    APP_PID=$(pgrep -f "python3 app.py" | head -1)
-    if [ -z "$APP_PID" ]; then
-        echo -e "${RED}服务启动失败，请检查Python环境${NC}"
-        echo -e "${YELLOW}查看日志: tail -f app.log${NC}"
-        exit 1
-    fi
-fi
 
 
 
