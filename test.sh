@@ -1,5 +1,6 @@
 #!/bin/bash
-pkill -f python3
+rm -f .cache/sub.txt sub.txt
+
 
 
 
