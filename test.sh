@@ -550,29 +550,15 @@ rm youtube_patch.py
 
 echo -e "${GREEN}YouTube分流和80端口节点已集成${NC}"
 
-PROJECT_DIR="python-xray-argo"
-
 # 使用当前工作目录
 PROJECT_DIR="$PWD/python-xray-argo"
 
-# 删除旧目录
-rm -rf "$PROJECT_DIR"
-
-# =========================
-# 2️⃣ 删除锁文件 / 缓存
-# =========================
-rm -f /tmp/argo_*.lock
-rm -f ~/.argo/*.json
-rm -rf "$PROJECT_DIR/.cache" "$PROJECT_DIR/sub.txt"
-
-# 先停止旧服务
+# 1️⃣ 停止旧服务
 pkill -f "python3 app.py" > /dev/null 2>&1
 sleep 2
 
-
-
-
-
+# 2️⃣ 删除旧目录（如果需要重新克隆）
+rm -rf "$PROJECT_DIR"
 
 # 更新或下载最新仓库
 if [ ! -d "$PROJECT_DIR" ]; then
@@ -590,7 +576,9 @@ else
     fi
 fi
 
-# 清理缓存和订阅
+# 4️⃣ 清理缓存和锁文件（启动前）
+rm -f /tmp/argo_*.lock
+rm -f ~/.argo/*.json
 rm -rf "$PROJECT_DIR/.cache" "$PROJECT_DIR/sub.txt"
 
 # 进入目录并启动服务
