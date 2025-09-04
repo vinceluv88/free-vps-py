@@ -550,7 +550,6 @@ rm youtube_patch.py
 
 echo -e "${GREEN}YouTube分流和80端口节点已集成${NC}"
 
-echo -e "${GREEN}YouTube分流和80端口节点已集成${NC}"
 
 # 使用当前工作目录
 PROJECT_DIR="$PWD/python-xray-argo"
@@ -606,30 +605,22 @@ cd "$PROJECT_DIR"
 nohup python3 app.py > app.log 2>&1 &
 echo $! > "$PID_FILE"
 
-
-
-echo -e "${GREEN}服务已在后台启动，PID: $APP_PID${NC}"
-echo -e "${YELLOW}日志文件: $(pwd)/app.log${NC}"
-
+# =========================
+# 6️⃣ 等待服务启动
+# =========================
 echo -e "${BLUE}等待服务启动...${NC}"
-sleep 8
+sleep 5
 
-# 检查服务是否正常运行
-if ! ps -p "$APP_PID" > /dev/null 2>&1; then
+if ! ps -p $(cat "$PID_FILE") > /dev/null 2>&1; then
     echo -e "${RED}服务启动失败，请检查日志${NC}"
-    echo -e "${YELLOW}查看日志: tail -f app.log${NC}"
-    echo -e "${YELLOW}检查端口占用: netstat -tlnp | grep :3000${NC}"
+    echo -e "${YELLOW}查看日志: tail -f $PROJECT_DIR/app.log${NC}"
     exit 1
 fi
 
-echo -e "${GREEN}服务运行正常${NC}"
+echo -e "${GREEN}服务运行正常，PID: $(cat "$PID_FILE")${NC}"
+echo -e "${BLUE}日志文件: $PROJECT_DIR/app.log${NC}"
+echo -e "${BLUE}正在等待Argo隧道建立和节点生成，请耐心等待...${NC}"
 
-SERVICE_PORT=$(grep "PORT = int" app.py | grep -o "or [0-9]*" | cut -d" " -f2)
-CURRENT_UUID=$(grep "UUID = " app.py | head -1 | cut -d"'" -f2)
-SUB_PATH_VALUE=$(grep "SUB_PATH = " app.py | cut -d"'" -f4)
-
-echo -e "${BLUE}等待节点信息生成...${NC}"
-echo -e "${YELLOW}正在等待Argo隧道建立和节点生成，请耐心等待...${NC}"
 
 # 循环等待节点信息生成，最多等待10分钟
 MAX_WAIT=600  # 10分钟
