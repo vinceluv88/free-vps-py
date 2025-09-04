@@ -139,28 +139,147 @@ fi
 echo -e "${GREEN}服务已在后台启动，PID: $APP_PID${NC}"
 
 # ------------------- 等待节点信息 -------------------
-MAX_WAIT=600
+MAX_WAIT=600  # 10分钟
 WAIT_COUNT=0
 NODE_INFO=""
 
 while [ $WAIT_COUNT -lt $MAX_WAIT ]; do
     if [ -f ".cache/sub.txt" ]; then
         NODE_INFO=$(cat .cache/sub.txt 2>/dev/null)
-        [ -n "$NODE_INFO" ] && break
+        if [ -n "$NODE_INFO" ]; then
+            echo -e "${GREEN}节点信息已生成！${NC}"
+            break
+        fi
     elif [ -f "sub.txt" ]; then
         NODE_INFO=$(cat sub.txt 2>/dev/null)
-        [ -n "$NODE_INFO" ] && break
+        if [ -n "$NODE_INFO" ]; then
+            echo -e "${GREEN}节点信息已生成！${NC}"
+            break
+        fi
     fi
+    
+    # 每30秒显示一次等待提示
+    if [ $((WAIT_COUNT % 30)) -eq 0 ]; then
+        MINUTES=$((WAIT_COUNT / 60))
+        SECONDS=$((WAIT_COUNT % 60))
+        echo -e "${YELLOW}已等待 ${MINUTES}分${SECONDS}秒，继续等待节点生成...${NC}"
+        echo -e "${BLUE}提示: Argo隧道建立需要时间，请继续等待${NC}"
+    fi
+    
     sleep 5
     WAIT_COUNT=$((WAIT_COUNT + 5))
 done
 
+# 检查是否成功获取到节点信息
 if [ -z "$NODE_INFO" ]; then
-    echo -e "${RED}等待超时，节点信息未生成${NC}"
+    echo -e "${RED}等待超时！节点信息未能在10分钟内生成${NC}"
+    echo -e "${YELLOW}可能原因：${NC}"
+    echo -e "1. 网络连接问题"
+    echo -e "2. Argo隧道建立失败"
+    echo -e "3. 服务配置错误"
+    echo
+    echo -e "${BLUE}建议操作：${NC}"
+    echo -e "1. 查看日志: ${YELLOW}tail -f $(pwd)/app.log${NC}"
+    echo -e "2. 检查服务: ${YELLOW}ps aux | grep python3${NC}"
+    echo -e "3. 重新运行脚本"
+    echo
+    echo -e "${YELLOW}服务信息：${NC}"
+    echo -e "进程PID: ${BLUE}$APP_PID${NC}"
+    echo -e "服务端口: ${BLUE}$SERVICE_PORT${NC}"
+    echo -e "日志文件: ${YELLOW}$(pwd)/app.log${NC}"
     exit 1
 fi
 
-# ------------------- 保存节点信息 -------------------
-echo "$NODE_INFO" > "$NODE_INFO_FILE"
+echo
+echo -e "${GREEN}========================================${NC}"
+echo -e "${GREEN}           部署完成！                   ${NC}"
+echo -e "${GREEN}========================================${NC}"
+echo
+
+echo -e "${YELLOW}=== 服务信息 ===${NC}"
+echo -e "服务状态: ${GREEN}运行中${NC}"
+echo -e "进程PID: ${BLUE}$APP_PID${NC}"
+echo -e "服务端口: ${BLUE}$SERVICE_PORT${NC}"
+echo -e "UUID: ${BLUE}$CURRENT_UUID${NC}"
+echo -e "订阅路径: ${BLUE}/$SUB_PATH_VALUE${NC}"
+echo
+
+echo -e "${YELLOW}=== 访问地址 ===${NC}"
+if command -v curl &> /dev/null; then
+    PUBLIC_IP=$(curl -s https://api.ipify.org 2>/dev/null || echo "获取失败")
+    if [ "$PUBLIC_IP" != "获取失败" ]; then
+        echo -e "订阅地址: ${GREEN}http://$PUBLIC_IP:$SERVICE_PORT/$SUB_PATH_VALUE${NC}"
+        echo -e "管理面板: ${GREEN}http://$PUBLIC_IP:$SERVICE_PORT${NC}"
+    fi
+fi
+echo -e "本地订阅: ${GREEN}http://localhost:$SERVICE_PORT/$SUB_PATH_VALUE${NC}"
+echo -e "本地面板: ${GREEN}http://localhost:$SERVICE_PORT${NC}"
+echo
+
+echo -e "${YELLOW}=== 节点信息 ===${NC}"
+DECODED_NODES=$(echo "$NODE_INFO" | base64 -d 2>/dev/null || echo "$NODE_INFO")
+
+echo -e "${GREEN}节点配置:${NC}"
+echo "$DECODED_NODES"
+echo
+
+echo -e "${GREEN}订阅链接:${NC}"
+echo "$NODE_INFO"
+echo
+
+SAVE_INFO="========================================
+           节点信息保存               
+========================================
+
+部署时间: $(date)
+UUID: $CURRENT_UUID
+服务端口: $SERVICE_PORT
+订阅路径: /$SUB_PATH_VALUE
+
+=== 访问地址 ==="
+
+if command -v curl &> /dev/null; then
+    PUBLIC_IP=$(curl -s https://api.ipify.org 2>/dev/null || echo "获取失败")
+    if [ "$PUBLIC_IP" != "获取失败" ]; then
+        SAVE_INFO="${SAVE_INFO}
+订阅地址: http://$PUBLIC_IP:$SERVICE_PORT/$SUB_PATH_VALUE
+管理面板: http://$PUBLIC_IP:$SERVICE_PORT"
+    fi
+fi
+
+SAVE_INFO="${SAVE_INFO}
+本地订阅: http://localhost:$SERVICE_PORT/$SUB_PATH_VALUE
+本地面板: http://localhost:$SERVICE_PORT
+
+=== 节点信息 ===
+$DECODED_NODES
+
+=== 订阅链接 ===
+$NODE_INFO
+
+=== 管理命令 ===
+查看日志: tail -f $(pwd)/app.log
+停止服务: kill $APP_PID
+重启服务: kill $APP_PID && nohup python3 app.py > app.log 2>&1 &
+查看进程: ps aux | grep python3
+
+=== 分流说明 ===
+- 已集成YouTube分流优化到xray配置
+- YouTube相关域名自动走专用线路
+- 无需额外配置，透明分流"
+
+echo "$SAVE_INFO" > "$NODE_INFO_FILE"
 echo -e "${GREEN}节点信息已保存到 $NODE_INFO_FILE${NC}"
-echo -e "${GREEN}部署完成！${NC}"
+echo -e "${YELLOW}使用脚本选择选项3可随时查看节点信息${NC}"
+
+echo -e "${YELLOW}=== 重要提示 ===${NC}"
+echo -e "${GREEN}部署已完成，节点信息已成功生成${NC}"
+echo -e "${GREEN}可以立即使用订阅地址添加到客户端${NC}"
+echo -e "${GREEN}YouTube分流已集成到xray配置，无需额外设置${NC}"
+echo -e "${GREEN}服务将持续在后台运行${NC}"
+echo
+
+echo -e "${GREEN}部署完成！感谢使用！${NC}"
+
+# 退出脚本，避免重复执行
+exit 0
