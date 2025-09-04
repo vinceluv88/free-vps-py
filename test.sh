@@ -548,78 +548,74 @@ EOF
 python3 youtube_patch.py
 rm youtube_patch.py
 
+
+
 echo -e "${GREEN}YouTube分流和80端口节点已集成${NC}"
 
-
-# 使用当前工作目录
-PROJECT_DIR="$PWD/python-xray-argo"
-PID_FILE="$PROJECT_DIR/app.pid"
+# =========================
+# 项目目录（使用当前目录，不嵌套）
+# =========================
+PROJECT_DIR="$PWD"
 
 # =========================
-# 1️⃣ 停止旧服务（安全）
+# 停止旧服务
 # =========================
-if [ -f "$PID_FILE" ]; then
-    OLD_PID=$(cat "$PID_FILE")
-    if ps -p "$OLD_PID" > /dev/null 2>&1; then
-        echo -e "${BLUE}停止旧服务 PID: $OLD_PID${NC}"
-        kill "$OLD_PID"
-        sleep 2
-    fi
-    rm -f "$PID_FILE"
+OLD_PID=$(pgrep -f "python3 app.py")
+if [ ! -z "$OLD_PID" ]; then
+    echo -e "${YELLOW}停止旧服务 PID: $OLD_PID${NC}"
+    kill -9 $OLD_PID
+    sleep 2
 fi
 
 # =========================
-# 2️⃣ 删除旧目录（如果需要重新克隆）
-# =========================
-rm -rf "$PROJECT_DIR"
-
-# =========================
-# 3️⃣ 更新或下载最新仓库
-# =========================
-if [ ! -d "$PROJECT_DIR" ]; then
-    echo -e "${BLUE}下载完整仓库...${NC}"
-    git clone https://github.com/eooce/python-xray-argo.git "$PROJECT_DIR"
-else
-    echo -e "${BLUE}更新仓库到最新版本...${NC}"
-    if [ -d "$PROJECT_DIR/.git" ]; then
-        git -C "$PROJECT_DIR" reset --hard
-        git -C "$PROJECT_DIR" pull
-    else
-        echo -e "${YELLOW}目录存在但不是 Git 仓库，重新下载...${NC}"
-        rm -rf "$PROJECT_DIR"
-        git clone https://github.com/eooce/python-xray-argo.git "$PROJECT_DIR"
-    fi
-fi
-
-# =========================
-# 4️⃣ 清理缓存和锁文件（启动前）
+# 删除旧缓存/锁文件
 # =========================
 rm -f /tmp/argo_*.lock
 rm -f ~/.argo/*.json
 rm -rf "$PROJECT_DIR/.cache" "$PROJECT_DIR/sub.txt"
 
 # =========================
-# 5️⃣ 启动服务
+# 克隆或更新仓库
 # =========================
-cd "$PROJECT_DIR"
-nohup python3 app.py > app.log 2>&1 &
-echo $! > "$PID_FILE"
+if [ ! -d "$PROJECT_DIR/.git" ]; then
+    echo -e "${BLUE}下载完整仓库...${NC}"
+    git clone https://github.com/eooce/python-xray-argo.git "$PROJECT_DIR"
+else
+    echo -e "${BLUE}更新仓库到最新版本...${NC}"
+    git -C "$PROJECT_DIR" reset --hard
+    git -C "$PROJECT_DIR" pull
+fi
 
 # =========================
-# 6️⃣ 等待服务启动
+# 检查端口占用
 # =========================
-echo -e "${BLUE}等待服务启动...${NC}"
-sleep 5
-
-if ! ps -p $(cat "$PID_FILE") > /dev/null 2>&1; then
-    echo -e "${RED}服务启动失败，请检查日志${NC}"
-    echo -e "${YELLOW}查看日志: tail -f $PROJECT_DIR/app.log${NC}"
+if netstat -tlnp 2>/dev/null | grep -q ":3000"; then
+    echo -e "${RED}3000端口被占用，请先停止占用进程${NC}"
     exit 1
 fi
 
-echo -e "${GREEN}服务运行正常，PID: $(cat "$PID_FILE")${NC}"
-echo -e "${BLUE}日志文件: $PROJECT_DIR/app.log${NC}"
-echo -e "${BLUE}正在等待Argo隧道建立和节点生成，请耐心等待...${NC}"
+# =========================
+# 启动服务
+# =========================
+cd "$PROJECT_DIR"
+nohup python3 app.py > app.log 2>&1 &
+APP_PID=$!
+
+sleep 2
+
+# =========================
+# 验证服务是否启动
+# =========================
+if [ -z "$APP_PID" ] || ! kill -0 $APP_PID 2>/dev/null; then
+    echo -e "${RED}服务启动失败，请检查Python环境或日志${NC}"
+    tail -n 50 app.log
+    exit 1
+fi
+
+echo -e "${GREEN}服务已启动，PID: $APP_PID${NC}"
+echo "日志文件: $PROJECT_DIR/app.log"
+echo "等待服务生成节点信息，请耐心等待..."
+
 
 
 # 循环等待节点信息生成，最多等待10分钟
