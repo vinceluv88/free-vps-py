@@ -550,10 +550,18 @@ rm youtube_patch.py
 
 
 
+#!/bin/bash
+
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+RED='\033[0;31m'
+NC='\033[0m'
+
 echo -e "${GREEN}YouTube分流和80端口节点已集成${NC}"
 
 # =========================
-# 项目目录（使用当前目录，不嵌套）
+# 项目目录（固定，不嵌套）
 # =========================
 PROJECT_DIR="$PWD"
 
@@ -578,7 +586,7 @@ rm -rf "$PROJECT_DIR/.cache" "$PROJECT_DIR/sub.txt"
 # 克隆或更新仓库
 # =========================
 if [ ! -d "$PROJECT_DIR/.git" ]; then
-    echo -e "${BLUE}下载完整仓库...${NC}"
+    echo -e "${BLUE}下载完整仓库到当前目录...${NC}"
     git clone https://github.com/eooce/python-xray-argo.git "$PROJECT_DIR"
 else
     echo -e "${BLUE}更新仓库到最新版本...${NC}"
@@ -597,11 +605,14 @@ fi
 # =========================
 # 启动服务
 # =========================
-cd "$PROJECT_DIR"
+cd "$PROJECT_DIR" || exit 1
+
+# nohup + disown 保证后台运行不会被父进程杀掉
 nohup python3 app.py > app.log 2>&1 &
 APP_PID=$!
+disown $APP_PID
 
-sleep 2
+sleep 3
 
 # =========================
 # 验证服务是否启动
@@ -615,6 +626,7 @@ fi
 echo -e "${GREEN}服务已启动，PID: $APP_PID${NC}"
 echo "日志文件: $PROJECT_DIR/app.log"
 echo "等待服务生成节点信息，请耐心等待..."
+
 
 
 
