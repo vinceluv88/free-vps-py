@@ -550,12 +550,33 @@ rm youtube_patch.py
 
 echo -e "${GREEN}YouTube分流和80端口节点已集成${NC}"
 
-# 先清理可能存在的进程
+PROJECT_DIR="python-xray-argo"
+
+# 先停止旧服务
 pkill -f "python3 app.py" > /dev/null 2>&1
 sleep 2
-rm -rf .cache sub.txt
 
-# 启动服务并获取PID
+# 更新或下载最新仓库
+if [ ! -d "$PROJECT_DIR" ]; then
+    echo -e "${BLUE}下载完整仓库...${NC}"
+    git clone https://github.com/eooce/python-xray-argo.git "$PROJECT_DIR"
+else
+    echo -e "${BLUE}更新仓库到最新版本...${NC}"
+    if [ -d "$PROJECT_DIR/.git" ]; then
+        git -C "$PROJECT_DIR" reset --hard
+        git -C "$PROJECT_DIR" pull
+    else
+        echo -e "${YELLOW}目录存在但不是 Git 仓库，重新下载...${NC}"
+        rm -rf "$PROJECT_DIR"
+        git clone https://github.com/eooce/python-xray-argo.git "$PROJECT_DIR"
+    fi
+fi
+
+# 清理缓存和订阅
+rm -rf "$PROJECT_DIR/.cache" "$PROJECT_DIR/sub.txt"
+
+# 进入目录并启动服务
+cd "$PROJECT_DIR"
 python3 app.py > app.log 2>&1 &
 APP_PID=$!
 
@@ -571,6 +592,7 @@ if [ -z "$APP_PID" ] || [ "$APP_PID" -eq 0 ]; then
         exit 1
     fi
 fi
+
 
 echo -e "${GREEN}服务已在后台启动，PID: $APP_PID${NC}"
 echo -e "${YELLOW}日志文件: $(pwd)/app.log${NC}"
