@@ -1,29 +1,31 @@
 #!/bin/bash
 
-APP_DIR="$HOME/app"
-LOG_FILE="$APP_DIR/app.log"
+NODE_INFO_FILE="$HOME/.xray_nodes_info"
 
-echo "停止旧的 Argo 隧道进程..."
-pkill -f "app.py" 2>/dev/null || true
+# 生成节点信息的逻辑
+generate_nodes() {
+    # ...你的生成节点信息的代码...
+    NODE_INFO="这里是生成的节点信息"
+    
+    # 自动保存到固定文件
+    echo "$NODE_INFO" > "$NODE_INFO_FILE"
+    echo -e "\n节点信息已保存到 $NODE_INFO_FILE"
+}
 
-echo "删除旧日志..."
-rm -f "$LOG_FILE"
-
-# 生成新的 UUID
-NEW_UUID=$(uuidgen | tr '[:upper:]' '[:lower:]')
-echo "生成新的 UUID: $NEW_UUID"
-export TUNNEL_UUID="$NEW_UUID"
-
-echo "启动新的 Argo 隧道..."
-nohup python3 "$APP_DIR/app.py" > "$LOG_FILE" 2>&1 &
-
-echo "正在实时抓取节点信息..."
-# 使用 tail -f 实时跟踪日志，并匹配包含节点信息的行
-# 假设节点信息日志包含 "https://" 或者 "节点信息" 关键字，根据你的实际日志改
-tail -f "$LOG_FILE" | while read line; do
-    if [[ "$line" == *"https://"* ]] || [[ "$line" == *"节点信息"* ]]; then
-        echo "检测到节点信息：$line"
-        # 如果只需要第一条，取消注释下面这行：
-        # pkill -P $$ tail
+# 查看节点信息
+view_nodes() {
+    if [[ -f "$NODE_INFO_FILE" ]]; then
+        cat "$NODE_INFO_FILE"
+    else
+        echo "节点信息文件不存在，请先运行脚本生成节点信息。"
     fi
-done
+}
+
+# 主逻辑：支持 -v 参数查看节点
+if [[ "$1" == "-v" ]]; then
+    view_nodes
+else
+    generate_nodes
+    # 这里也可以顺便显示节点信息
+    echo "$NODE_INFO"
+fi
